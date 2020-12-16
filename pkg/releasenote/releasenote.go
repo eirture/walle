@@ -15,7 +15,7 @@ const (
 )
 
 var (
-	tagMatcherRe = regexp.MustCompile("^([^( ]+)\\((.*)\\)$")
+	tagMatcherRe = regexp.MustCompile(`^([^( ]+)\((.*)\)$`)
 	scopes       = map[string]string{
 		"feat":     titleNewFeature,
 		"fix":      titleBugFix,

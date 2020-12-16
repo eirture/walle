@@ -49,6 +49,9 @@ func (o *Options) Run() error {
 	}
 
 	mrs, err := o.GitLabClient.ListMergeRequests(o.project, afterAt)
+	if err != nil {
+		return err
+	}
 
 	condition := func(_ string) bool { return true }
 	if len(o.branches) > 0 {
