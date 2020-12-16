@@ -11,6 +11,7 @@ import (
 	"walle/pkg/context"
 	"walle/pkg/gitlab"
 	"walle/pkg/releasenote"
+	"walle/pkg/utils"
 )
 
 func NewReleaseCmd(ctx *context.Context) *cobra.Command {
@@ -25,15 +26,18 @@ func NewReleaseCmd(ctx *context.Context) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.project = ctx.Project
 			if err := opts.Run(cmd, args); err != nil {
-				ctx.Logger.Error(err)
+				return err
 			}
 			return nil
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.targetBranch, "branch", "b", "master", "the target branch name of merge request")
-	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "the tag name which will be released (required)")
+	cmd.Flags().StringArrayVarP(&opts.branches, "branch", "b", []string{}, "the target branch name of merge request")
+	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "The name of a tag (required)")
+	cmd.Flags().StringVarP(&opts.ref, "ref", "", "", "Create tag using commit SHA, another tag name, or branch name (required)")
+	cmd.Flags().StringVarP(&opts.msg, "message", "m", "", "the annotation of tag")
 	_ = cmd.MarkFlagRequired("tag")
+	_ = cmd.MarkFlagRequired("ref")
 	return cmd
 }
 
@@ -42,9 +46,11 @@ type releaseOptions struct {
 	cfg    *config.Config
 	logger *logrus.Entry
 
-	targetBranch string
-	tag          string
-	project      string
+	branches []string
+	tag      string
+	project  string
+	ref      string
+	msg      string
 }
 
 func (o *releaseOptions) Run(cmd *cobra.Command, args []string) error {
@@ -61,17 +67,26 @@ func (o *releaseOptions) Run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	var titles []string
-	for _, mr := range mrs {
-		title := fmt.Sprintf("%s ([#%d](%s)) @%s",
-			mr.Title,
-			mr.IID,
-			mr.WebURL,
-			mr.Author.Username,
-		)
-		fmt.Println(title)
-		titles = append(titles, title)
+
+	condition := func(v string) bool { return true }
+	if len(o.branches) > 0 {
+		condition = func(v string) bool {
+			return utils.InStringArray(v, o.branches)
+		}
 	}
-	fmt.Println(releasenote.GenerateReleaseNotes(titles))
+
+	result := releasenote.ReleaseNotesFromMR(mrs, condition)
+
+	tagReq := gitlab.TagRequest{
+		TagName:            o.tag,
+		Ref:                o.ref,
+		Message:            o.msg,
+		ReleaseDescription: result,
+	}
+	if err = o.client.CreateTag(o.project, tagReq); err != nil {
+		return err
+	}
+
+	fmt.Printf("successfully to release %s\n", o.tag)
 	return nil
 }

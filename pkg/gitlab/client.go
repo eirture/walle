@@ -219,7 +219,7 @@ func (c *client) log(methodName string, args ...interface{}) (logDuration func()
 	}
 }
 
-func (c *client) ListMergeRequests(project string, updatedAfter time.Time) ([]MergeRequest, error) {
+func (c *client) ListMergeRequests(project string, mergedAfter time.Time) ([]MergeRequest, error) {
 	c.log("GetMergeRequests", project)
 	var mrs []MergeRequest
 	if c.fake {
@@ -229,7 +229,7 @@ func (c *client) ListMergeRequests(project string, updatedAfter time.Time) ([]Me
 	values := url.Values{
 		"pre_page":      []string{"100"},
 		"state":         []string{"merged"},
-		"updated_after": []string{updatedAfter.Format(time.RFC3339)},
+		"updated_after": []string{mergedAfter.Format(time.RFC3339)},
 	}
 	err := c.readPaginatedResultsWithValues(
 		path,
@@ -238,7 +238,13 @@ func (c *client) ListMergeRequests(project string, updatedAfter time.Time) ([]Me
 			return &[]MergeRequest{}
 		},
 		func(obj interface{}) {
-			mrs = append(mrs, *(obj.(*[]MergeRequest))...)
+			partialMrs := *(obj.(*[]MergeRequest))
+			for _, mr := range partialMrs {
+				if mergedAfter.After(mr.MergedAt) {
+					continue
+				}
+				mrs = append(mrs, mr)
+			}
 		},
 	)
 	if err != nil {
