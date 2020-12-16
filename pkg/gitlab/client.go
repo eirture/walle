@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+
+	"walle/pkg/utils"
 )
 
 const (
@@ -107,7 +109,7 @@ func (c *client) requestRaw(r *request) (int, []byte, error) {
 	if err != nil {
 		return 0, nil, err
 	}
-	defer resp.Body.Close()
+	defer utils.CloseSilently(resp.Body)
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return 0, nil, nil
@@ -323,7 +325,7 @@ func (c *client) readPaginatedResultsWithValues(path string, values url.Values, 
 		if err != nil {
 			return err
 		}
-		defer resp.Body.Close()
+		defer utils.CloseSilently(resp.Body)
 		if resp.StatusCode < 200 || resp.StatusCode > 299 {
 			return fmt.Errorf("return code not 2XX: %s", resp.Status)
 		}
