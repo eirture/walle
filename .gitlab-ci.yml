@@ -1,0 +1,9 @@
+stages:
+  - test
+
+
+lint:
+  image: docker.bizseer.com/golangci/golangci-lint:v1.30
+  stage: test
+  script:
+    - golangci-lint run

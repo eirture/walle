@@ -34,9 +34,9 @@ type MergeRequest struct {
 
 type Project struct {
 	ID            int
-	description   string
+	Description   string
 	DefaultBranch string
-	visibility    string
+	Visibility    string
 	WebURL        string
 	TagList       []string
 	Owner         User
