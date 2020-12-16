@@ -25,6 +25,7 @@ func NewCmdRoot(ctx *context.Context) *cobra.Command {
 func EnablePersistentFlags(ctx *context.Context, cmd *cobra.Command) {
 	cmd.PersistentFlags().StringP("project", "p", "", "project fully name or id")
 	cmd.PersistentFlags().String("token", "", "gitlab token (required)")
+	cmd.PersistentFlags().String("host", "", "gitlab host address")
 
 	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		projectOverride, _ := cmd.Flags().GetString("project")
@@ -41,5 +42,9 @@ func EnablePersistentFlags(ctx *context.Context, cmd *cobra.Command) {
 		}
 		ctx.Config.Token = tokenOverride
 
+		host, _ := cmd.Flags().GetString("host")
+		if host != "" {
+			ctx.Config.Host = host
+		}
 	}
 }
