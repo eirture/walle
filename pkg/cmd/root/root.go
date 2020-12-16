@@ -7,10 +7,11 @@ import (
 
 	"walle/pkg/cmd/changelog"
 	"walle/pkg/cmd/release"
+	"walle/pkg/cmd/version"
 	"walle/pkg/context"
 )
 
-func NewCmdRoot(ctx *context.Context) *cobra.Command {
+func NewCmdRoot(ctx *context.Context, buildVersion, buildDate string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "walle",
 		Short:         "Valle is a tool which generate changelog and publish release",
@@ -20,6 +21,7 @@ func NewCmdRoot(ctx *context.Context) *cobra.Command {
 	EnablePersistentFlags(ctx, cmd)
 	cmd.AddCommand(release.NewReleaseCmd(ctx))
 	cmd.AddCommand(changelog.NewCmdChangelog(ctx))
+	cmd.AddCommand(version.NewCmdVersion(ctx, buildVersion, buildDate))
 	return cmd
 }
 
@@ -27,7 +29,6 @@ func EnablePersistentFlags(ctx *context.Context, cmd *cobra.Command) {
 	cmd.PersistentFlags().StringP("project", "p", "", "project fully name or id")
 	cmd.PersistentFlags().String("token", "", "gitlab token")
 	cmd.PersistentFlags().String("host", "", "gitlab host address")
-	_ = cmd.MarkPersistentFlagRequired("project")
 
 	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		projectOverride, _ := cmd.Flags().GetString("project")
