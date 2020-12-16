@@ -14,9 +14,6 @@ func NewCmdRoot(ctx *context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "walle",
 		Short: "Valle is a tool which generate changelog and publish release",
-		Run: func(cmd *cobra.Command, args []string) {
-
-		},
 	}
 	EnablePersistentFlags(ctx, cmd)
 	cmd.AddCommand(release.NewReleaseCmd(ctx))
@@ -26,7 +23,7 @@ func NewCmdRoot(ctx *context.Context) *cobra.Command {
 
 func EnablePersistentFlags(ctx *context.Context, cmd *cobra.Command) {
 	cmd.PersistentFlags().StringP("project", "p", "", "project fully name or id")
-	cmd.PersistentFlags().String("token", "", "gitlab token (required)")
+	cmd.PersistentFlags().String("token", "", "gitlab token")
 	cmd.PersistentFlags().String("host", "", "gitlab host address")
 
 	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
