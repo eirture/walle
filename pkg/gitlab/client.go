@@ -309,7 +309,7 @@ func (c *client) CreateTag(project string, req TagRequest) error {
 	_, err := c.request(&request{
 		method:    http.MethodPost,
 		path:      path + "?" + values.Encode(),
-		exitCodes: []int{200},
+		exitCodes: []int{200, 201},
 	}, nil)
 	return err
 }
