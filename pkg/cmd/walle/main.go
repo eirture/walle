@@ -6,6 +6,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"walle/pkg/build"
 	"walle/pkg/cmd/root"
 	"walle/pkg/config"
 	"walle/pkg/context"
@@ -13,6 +14,8 @@ import (
 )
 
 func main() {
+	buildDate := build.Date
+	buildVersion := build.Version
 
 	cfg := config.LoadConfig()
 
@@ -23,7 +26,7 @@ func main() {
 	logger := logrus.WithField("client", "walle")
 	client := gitlab.NewClient(logger, &cfg)
 	ctx := context.NewContext(client, &cfg, logger)
-	rootCmd := root.NewCmdRoot(&ctx)
+	rootCmd := root.NewCmdRoot(&ctx, buildVersion, buildDate)
 	var expandedArgs []string
 	if len(os.Args) > 0 {
 		expandedArgs = os.Args[1:]
