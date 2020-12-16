@@ -40,5 +40,6 @@ func EnablePersistentFlags(ctx *context.Context, cmd *cobra.Command) {
 			tokenOverride = tokenFromEnv
 		}
 		ctx.Config.Token = tokenOverride
+
 	}
 }

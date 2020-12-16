@@ -211,7 +211,7 @@ func (c *client) log(methodName string, args ...interface{}) (logDuration func()
 		as = append(as, fmt.Sprintf("%v", arg))
 	}
 	start := time.Now()
-	c.logger.Infof("%s(%s)", methodName, strings.Join(as, ", "))
+	c.logger.Debugf("%s(%s)", methodName, strings.Join(as, ", "))
 	return func() {
 		c.logger.WithField("duration", time.Since(start).String()).Debugf("%s(%s) finished", methodName, strings.Join(as, ", "))
 	}

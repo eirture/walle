@@ -56,7 +56,7 @@ func (o *releaseOptions) Run(cmd *cobra.Command, args []string) error {
 	if len(tags) > 0 {
 		afterAt = tags[0].Commit.CreatedAt
 	}
-	o.logger.Infof("list merge request after at: %v", afterAt)
+
 	mrs, err := o.client.ListMergeRequests(o.project, afterAt)
 	if err != nil {
 		return err
