@@ -8,4 +8,9 @@ bin/walle: $(BUILD_FILES)
 
 .PHONY: clean
 clean:
-	rm -rf ./bin
+	@rm -rf ./bin
+
+
+.PHONY: lint
+lint:
+	@golangci-lint run

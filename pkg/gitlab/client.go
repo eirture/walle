@@ -74,7 +74,6 @@ type delegate struct {
 	getAPIBase   func() string
 	getToken     func() string
 	dry          bool
-	fake         bool
 }
 
 func (c *client) authHeader() string {
@@ -102,7 +101,7 @@ func (c *client) request(r *request, ret interface{}) (int, error) {
 }
 
 func (c *client) requestRaw(r *request) (int, []byte, error) {
-	if c.fake || (c.dry && r.method != http.MethodGet) {
+	if c.dry && r.method != http.MethodGet {
 		return r.exitCodes[0], nil, nil
 	}
 	resp, err := c.requestRetry(r.method, r.path, r.requestBody)
@@ -222,9 +221,7 @@ func (c *client) log(methodName string, args ...interface{}) (logDuration func()
 func (c *client) ListMergeRequests(project string, mergedAfter time.Time) ([]MergeRequest, error) {
 	c.log("GetMergeRequests", project)
 	var mrs []MergeRequest
-	if c.fake {
-		return mrs, nil
-	}
+
 	path := fmt.Sprintf("/projects/%s/merge_requests", url.PathEscape(project))
 	values := url.Values{
 		"pre_page":      []string{"100"},
@@ -256,9 +253,7 @@ func (c *client) ListMergeRequests(project string, mergedAfter time.Time) ([]Mer
 func (c *client) ListTags(project string) ([]Tag, error) {
 	c.log("ListTags", project)
 	var tags []Tag
-	if c.fake {
-		return tags, nil
-	}
+
 	path := fmt.Sprintf("/projects/%s/repository/tags", url.PathEscape(project))
 	err := c.readPaginateResults(
 		path,
