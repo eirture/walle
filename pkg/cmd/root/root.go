@@ -12,8 +12,10 @@ import (
 
 func NewCmdRoot(ctx *context.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "walle",
-		Short: "Valle is a tool which generate changelog and publish release",
+		Use:           "walle",
+		Short:         "Valle is a tool which generate changelog and publish release",
+		SilenceErrors: true,
+		SilenceUsage:  true,
 	}
 	EnablePersistentFlags(ctx, cmd)
 	cmd.AddCommand(release.NewReleaseCmd(ctx))
@@ -25,6 +27,7 @@ func EnablePersistentFlags(ctx *context.Context, cmd *cobra.Command) {
 	cmd.PersistentFlags().StringP("project", "p", "", "project fully name or id")
 	cmd.PersistentFlags().String("token", "", "gitlab token")
 	cmd.PersistentFlags().String("host", "", "gitlab host address")
+	_ = cmd.MarkPersistentFlagRequired("project")
 
 	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		projectOverride, _ := cmd.Flags().GetString("project")
