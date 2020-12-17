@@ -9,6 +9,8 @@ lint:
   stage: test
   script:
     - golangci-lint run
+  only:
+    - master
 
 .only_release:
   only:
@@ -54,15 +56,17 @@ binary:
 release:
   image: alpine:3.12.3
   stage: release
-  extends:
-    - .only_release
+  only:
+#    - .only_release
+    - dev
   variables:
     WALLW_GITLAB_TOKEN: F_6JFyyDez9AyfJNqdWa
   before_script:
-    - cp bin/walle /usr/local/bin/walle
+#    - cp bin/walle /usr/local/bin/walle
+    - wget https://bizseer-public.oss-cn-beijing-internal.aliyuncs.com/release/walle/0.0.1/walle -O /usr/local/bin/walle
     - chmod a+x /usr/local/bin/walle
   script:
     - walle version
     - export WALLE_GITLAB_HOST=$CI_SERVER_URL
     - export WALLW_GITLAB_TOKEN=F_6JFyyDez9AyfJNqdWa
-    - walle release -p $CI_PROJECT_PATH --ref $CI_COMMIT_SHA -t $CI_BUILD_TAG
+    - walle release -p $CI_PROJECT_PATH --ref $CI_COMMIT_SHA -t v0.0.1
