@@ -8,7 +8,6 @@ lint:
   image: docker.bizseer.com/golangci/golangci-lint:v1.30
   stage: test
   script:
-    - env
     - golangci-lint run
 
 .only_release:
@@ -17,13 +16,11 @@ lint:
   except:
     - branches
 
-variables:
-  WALLE_VERSION: ${CI_BUILD_TAG:1}
-
 build:
   image: docker.bizseer.com/library/golang:1.14
   stage: build
   script:
+    - export WALLE_VERSION=${CI_BUILD_TAG:1}
     - echo $WALLE_VERSION
     - make bin/walle
     - ./bin/walle version
@@ -45,7 +42,7 @@ binary:
     - ossutil --version
     - ossutil config -e $OSS_ENDPOINT -i $ACCESS_KEY_ID -k $ACCESS_KEY_SECRET
   script:
-    - ls -al bin
+    - export WALLE_VERSION=${CI_BUILD_TAG:1}
     - echo $WALLE_VERSION
     - WALLE_RELEASE_PATH=$RELEASE_PATH/$WALLE_VERSION/walle
     - echo $WALLE_RELEASE_PATH
