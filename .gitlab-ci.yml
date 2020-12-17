@@ -13,15 +13,18 @@ lint:
 
 .only_release:
   only:
-    refs:
-      - /^v[0-9]+\.[0-9]+\.[0-9]+$/i
-      - master
-      - dev
+    - /^v[0-9]+\.[0-9]+\.[0-9]+$/i
+  except:
+    - branches
+
+variables:
+  WALLE_VERSION: ${CI_BUILD_TAG:1}
 
 build:
   image: docker.bizseer.com/library/golang:1.14
   stage: build
   script:
+    - echo $WALLE_VERSION
     - make bin/walle
     - ./bin/walle version
   extends:
@@ -43,9 +46,8 @@ binary:
     - ossutil config -e $OSS_ENDPOINT -i $ACCESS_KEY_ID -k $ACCESS_KEY_SECRET
   script:
     - ls -al bin
-    - VERSION=$(./bin/walle version | head -n 1 | awk '{print $3}')
-    - echo $VERSION
-    - WALLE_RELEASE_PATH=$RELEASE_PATH/$VERSION/walle
+    - echo $WALLE_VERSION
+    - WALLE_RELEASE_PATH=$RELEASE_PATH/$WALLE_VERSION/walle
     - echo $WALLE_RELEASE_PATH
     - ossutil cp bin/walle $WALLE_RELEASE_PATH
     - echo $WALLE_RELEASE_PATH > bin/links.txt
@@ -58,6 +60,10 @@ release:
   extends:
     - .only_release
   before_script:
-    - ls -la bin
+    - cp bin/walle /usr/local/bin/walle
+    - chmod a+x /usr/local/bin/walle
+    - export WALLE_GITLAB_HOST=$CI_SERVER_HOST
+    - export WALLW_GITLAB_TOKEN=F_6JFyyDez9AyfJNqdWa
   script:
-    - env
+    - walle version
+    - walle release -p $CI_PROJECT_PATH --ref $CI_COMMIT_SHA -t $CI_BUILD_TAG
