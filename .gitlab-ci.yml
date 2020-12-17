@@ -1,9 +1,36 @@
 stages:
   - test
-
+  - build
+  - release
 
 lint:
   image: docker.bizseer.com/golangci/golangci-lint:v1.30
   stage: test
   script:
     - golangci-lint run
+
+.main_branshes:
+  only:
+    - master
+    - dev
+
+build:
+  image: docker.bizseer.com/library/golang:1.14
+  stage: build
+  script:
+    - make bin/walle
+  extends:
+    - .main_branches
+  artifacts:
+    paths:
+      - bin/walle
+
+binary:
+  image: docker.bizseer.com/bizseer/ossutil:1.7.0
+  stage: release
+  before_script:
+    - ossutil --version
+  script:
+    - ls -al
+  extends:
+    - .main_branches
