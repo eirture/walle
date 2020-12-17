@@ -10,10 +10,12 @@ lint:
   script:
     - golangci-lint run
 
-.main_branches:
+.only_release:
   only:
-    - master
-    - dev
+    refs:
+#      - /^v[0-9]+\.[0-9]+\.[0-9]+$/i
+      - master
+      - dev
 
 build:
   image: docker.bizseer.com/library/golang:1.14
@@ -22,7 +24,7 @@ build:
     - make bin/walle
     - ./bin/walle version
   extends:
-    - .main_branches
+    - .only_release
   artifacts:
     paths:
       - bin/
@@ -47,5 +49,14 @@ binary:
     - ossutil cp bin/walle $WALLE_RELEASE_PATH
     - echo $WALLE_RELEASE_PATH > bin/links.txt
   extends:
-    - .main_branches
+    - .only_release
 
+release:
+  image: alpine:3.12.3
+  stage: release
+  extends:
+    - .only_release
+  before_script:
+    - ls -la bin
+  script:
+    - env
