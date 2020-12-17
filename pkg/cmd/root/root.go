@@ -5,7 +5,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"walle/pkg/cmd/changelog"
 	"walle/pkg/cmd/release"
 	"walle/pkg/cmd/version"
 	"walle/pkg/context"
@@ -20,7 +19,6 @@ func NewCmdRoot(ctx *context.Context, buildVersion, buildDate string) *cobra.Com
 	}
 	EnablePersistentFlags(ctx, cmd)
 	cmd.AddCommand(release.NewReleaseCmd(ctx))
-	cmd.AddCommand(changelog.NewCmdChangelog(ctx))
 	cmd.AddCommand(version.NewCmdVersion(ctx, buildVersion, buildDate))
 	return cmd
 }

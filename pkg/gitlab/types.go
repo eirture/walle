@@ -14,22 +14,23 @@ type User struct {
 }
 
 type MergeRequest struct {
-	ID            int       `json:"id"`
-	IID           int       `json:"iid"`
-	ProjectID     int       `json:"project_id"`
-	Title         string    `json:"title"`
-	Description   string    `json:"description"`
-	State         string    `json:"state"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
-	MergedAt      time.Time `json:"merged_at"`
-	Labels        []string  `json:"labels"`
-	WorkInProcess bool      `json:"work_in_process"`
-	WebURL        string    `json:"web_url"`
-	TargetBranch  string    `json:"target_branch"`
-	SourceBranch  string    `json:"source_branch"`
-	MergeStatus   string    `json:"merge_status"`
-	Author        User      `json:"author"`
+	ID             int       `json:"id"`
+	IID            int       `json:"iid"`
+	ProjectID      int       `json:"project_id"`
+	Title          string    `json:"title"`
+	Description    string    `json:"description"`
+	State          string    `json:"state"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+	MergedAt       time.Time `json:"merged_at"`
+	Labels         []string  `json:"labels"`
+	WorkInProcess  bool      `json:"work_in_process"`
+	WebURL         string    `json:"web_url"`
+	TargetBranch   string    `json:"target_branch"`
+	SourceBranch   string    `json:"source_branch"`
+	MergeStatus    string    `json:"merge_status"`
+	Author         User      `json:"author"`
+	MergeCommitSHA string    `json:"merge_commit_sha"`
 }
 
 type Project struct {
@@ -62,12 +63,12 @@ type Commit struct {
 }
 
 type Tag struct {
-	Name      string  `json:"name"`
-	Target    string  `json:"target"`
-	Message   string  `json:"message"`
-	Release   Release `json:"release"`
-	Protected bool    `json:"protected"`
-	Commit    Commit  `json:"commit"`
+	Name      string   `json:"name"`
+	Target    string   `json:"target"`
+	Message   string   `json:"message"`
+	Release   *Release `json:"release"`
+	Protected bool     `json:"protected"`
+	Commit    Commit   `json:"commit"`
 }
 
 type TagRequest struct {
