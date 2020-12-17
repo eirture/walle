@@ -28,9 +28,26 @@ build:
 binary:
   image: docker.bizseer.com/bizseer/ossutil:1.7.0
   stage: release
+  variables:
+    OSS_ENDPOINT: http://oss-cn-beijing-internal.aliyuncs.com
+    ACCESS_KEY_ID: LTAI4G3kyRTu64JpzH7sHdcq
+    ACCESS_KEY_SECRET: ccWfgItZyebnvvvmQC9ddnqtntDJU4
+    RELEASE_PATH: oss://bizseer-public/release/walle
   before_script:
     - ossutil --version
+    - ossutil config -e $OSS_ENDPOINT -i $ACCESS_KEY_ID -k $ACCESS_KEY_SECRET
   script:
-    - ls -al
+    - ls -al bin
+    - pwd
+    - cp bin/walle /usr/local/bin/walle
+    - VERSION=$(walle version | head -n 1 | awk '{print $3}')
+    - echo $VERSION
+    - WALLE_RELEASE_PATH=$RELEASE_PATH/$VERSION/walle
+    - echo $WALLE_RELEASE_PATH
+    - ossutil cp bin/walle $WALLE_RELEASE_PATH
+    - echo $WALLE_RELEASE_PATH > bin/links.txt
   extends:
     - .main_branches
+  artifacts:
+    paths:
+      - bin/links.txt
