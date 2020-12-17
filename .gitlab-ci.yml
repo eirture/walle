@@ -1,9 +1,62 @@
 stages:
   - test
-
+  - build
+  - pre-release
+  - release
 
 lint:
   image: docker.bizseer.com/golangci/golangci-lint:v1.30
   stage: test
   script:
     - golangci-lint run
+
+.only_release:
+  only:
+    refs:
+#      - /^v[0-9]+\.[0-9]+\.[0-9]+$/i
+      - master
+      - dev
+
+build:
+  image: docker.bizseer.com/library/golang:1.14
+  stage: build
+  script:
+    - make bin/walle
+    - ./bin/walle version
+  extends:
+    - .only_release
+  artifacts:
+    paths:
+      - bin/
+
+binary:
+  image: docker.bizseer.com/bizseer/ossutil:1.7.0
+  stage: pre-release
+  variables:
+    OSS_ENDPOINT: http://oss-cn-beijing-internal.aliyuncs.com
+    ACCESS_KEY_ID: LTAI4G3kyRTu64JpzH7sHdcq
+    ACCESS_KEY_SECRET: ccWfgItZyebnvvvmQC9ddnqtntDJU4
+    RELEASE_PATH: oss://bizseer-public/release/walle
+  before_script:
+    - ossutil --version
+    - ossutil config -e $OSS_ENDPOINT -i $ACCESS_KEY_ID -k $ACCESS_KEY_SECRET
+  script:
+    - ls -al bin
+    - VERSION=$(./bin/walle version | head -n 1 | awk '{print $3}')
+    - echo $VERSION
+    - WALLE_RELEASE_PATH=$RELEASE_PATH/$VERSION/walle
+    - echo $WALLE_RELEASE_PATH
+    - ossutil cp bin/walle $WALLE_RELEASE_PATH
+    - echo $WALLE_RELEASE_PATH > bin/links.txt
+  extends:
+    - .only_release
+
+release:
+  image: alpine:3.12.3
+  stage: release
+  extends:
+    - .only_release
+  before_script:
+    - ls -la bin
+  script:
+    - env
