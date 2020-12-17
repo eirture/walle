@@ -9,9 +9,15 @@ else
     BUILD_DATE ?= $(shell date "$(DATE_FMT)")
 endif
 
+CGO_CPPFLAGS ?= ${CPPFLAGS}
+export CGO_CPPFLAGS
+CGO_CFLAGS ?= ${CFLAGS}
+export CGO_CFLAGS
+CGO_LDFLAGS ?= $(filter -g -L% -l% -O%,${LDFLAGS})
+export CGO_LDFLAGS
+
 GO_LDFLAGS := -X walle/pkg/build.Version=$(WALLE_VERSION) $(GO_LDFLAGS)
 GO_LDFLAGS := -X walle/pkg/build.Date=$(BUILD_DATE) $(GO_LDFLAGS)
-
 
 .PHONY: build
 bin/walle: $(BUILD_FILES)
