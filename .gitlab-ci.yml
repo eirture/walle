@@ -64,5 +64,5 @@ release:
   script:
     - walle version
     - export WALLE_GITLAB_HOST=$CI_SERVER_URL
-    - export WALLW_GITLAB_TOKEN
+    - export WALLW_GITLAB_TOKEN=F_6JFyyDez9AyfJNqdWa
     - walle release -p $CI_PROJECT_PATH --ref $CI_COMMIT_SHA -t $CI_BUILD_TAG
