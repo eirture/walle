@@ -57,12 +57,11 @@ release:
   extends:
     - .only_release
   variables:
-    WALLW_GITLAB_TOKEN: F_6JFyyDez9AyfJNqdWa
+    WALLE_GITLAB_TOKEN: F_6JFyyDez9AyfJNqdWa
   before_script:
     - cp bin/walle /usr/local/bin/walle
     - chmod a+x /usr/local/bin/walle
   script:
     - walle version
     - export WALLE_GITLAB_HOST=$CI_SERVER_URL
-    - export WALLW_GITLAB_TOKEN=F_6JFyyDez9AyfJNqdWa
     - walle release -p $CI_PROJECT_PATH --ref $CI_COMMIT_SHA -t $CI_BUILD_TAG
