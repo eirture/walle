@@ -9,6 +9,8 @@ lint:
   stage: test
   script:
     - golangci-lint run
+  only:
+    - master
 
 .only_release:
   only:
@@ -55,7 +57,8 @@ release:
   image: alpine:3.12.3
   stage: release
   extends:
-    - .only_release
+#    - .only_release
+    - dev
   variables:
     WALLW_GITLAB_TOKEN: F_6JFyyDez9AyfJNqdWa
   before_script:
@@ -65,4 +68,4 @@ release:
     - walle version
     - export WALLE_GITLAB_HOST=$CI_SERVER_URL
     - export WALLW_GITLAB_TOKEN=F_6JFyyDez9AyfJNqdWa
-    - walle release -p $CI_PROJECT_PATH --ref $CI_COMMIT_SHA -t $CI_BUILD_TAG
+    - walle release -p $CI_PROJECT_PATH --ref $CI_COMMIT_SHA -t v0.0.1
