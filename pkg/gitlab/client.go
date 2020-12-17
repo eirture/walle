@@ -48,6 +48,7 @@ type MergeRequestClient interface {
 type TagClient interface {
 	ListTags(project string) ([]Tag, error)
 	CreateTag(project string, req TagRequest) error
+	UpsertRelease(project string, tag, desc string) error
 }
 
 type Config interface {
@@ -303,6 +304,47 @@ func (c *client) CreateTag(project string, req TagRequest) error {
 
 	_, err := c.request(&request{
 		method:    http.MethodPost,
+		path:      path + "?" + values.Encode(),
+		exitCodes: []int{200, 201},
+	}, nil)
+	return err
+}
+
+func (c *client) GetTag(project, tag string) (Tag, error) {
+	path := fmt.Sprintf(
+		"/projects/%s/repository/tags/%s",
+		url.PathEscape(project),
+		url.PathEscape(tag),
+	)
+
+	t := Tag{}
+
+	_, err := c.request(&request{
+		method:    http.MethodGet,
+		path:      path,
+		exitCodes: []int{200},
+	}, &t)
+	return t, err
+}
+
+func (c *client) UpsertRelease(project string, tag, desc string) error {
+	method := http.MethodPost // Create
+	if t, err := c.GetTag(project, tag); err == nil && t.Release != nil {
+		method = http.MethodPut
+	}
+
+	path := fmt.Sprintf(
+		"/projects/%s/repository/tags/%s/release",
+		url.PathEscape(project),
+		url.PathEscape(tag),
+	)
+
+	values := url.Values{
+		"description": []string{desc},
+	}
+
+	_, err := c.request(&request{
+		method:    method,
 		path:      path + "?" + values.Encode(),
 		exitCodes: []int{200, 201},
 	}, nil)

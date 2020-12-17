@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"walle/pkg/gitlab"
+	"walle/pkg/utils"
 )
 
 const (
@@ -59,13 +61,13 @@ func GenerateReleaseNotes(items []string) string {
 	return strings.Join(values, "\n")
 }
 
-func ReleaseNotesFromMR(mrs []gitlab.MergeRequest, condition func(v string) bool) string {
+func ReleaseNotesFromMR(mrs []gitlab.MergeRequest, condition func(mr *gitlab.MergeRequest) bool) string {
 	if condition == nil {
-		condition = func(v string) bool { return true }
+		condition = func(mr *gitlab.MergeRequest) bool { return true }
 	}
 	var titles []string
 	for _, mr := range mrs {
-		if !condition(mr.TargetBranch) {
+		if !condition(&mr) {
 			continue
 		}
 		titles = append(titles, fmt.Sprintf(
@@ -78,4 +80,50 @@ func ReleaseNotesFromMR(mrs []gitlab.MergeRequest, condition func(v string) bool
 	}
 
 	return GenerateReleaseNotes(titles)
+}
+
+func ChangelogFromMR(client gitlab.Client, project, tagName string, branches []string) (exists bool, changelog string, err error) {
+	tags, err := client.ListTags(project)
+	if err != nil {
+		return
+	}
+	afterAt, beforeAt := time.Unix(0, 0), time.Now()
+
+	var afterAtSHA, beforeAtSHA string
+	for i := len(tags) - 1; i >= 0; i-- {
+		tag := tags[i]
+		if tag.Name == tagName {
+			exists = true
+			beforeAt = tag.Commit.CreatedAt
+			beforeAtSHA = tag.Commit.ID
+			continue
+		}
+		afterAtSHA = tag.Commit.ID
+		afterAt = tag.Commit.CreatedAt
+		break
+	}
+
+	mrs, err := client.ListMergeRequests(project, afterAt)
+	if err != nil {
+		return
+	}
+
+	afterCond := func(mr *gitlab.MergeRequest) bool {
+		return mr.MergeCommitSHA != afterAtSHA
+	}
+
+	beforeCond := func(mr *gitlab.MergeRequest) bool {
+		return beforeAt.After(mr.MergedAt) || beforeAtSHA == "" || beforeAtSHA == mr.MergeCommitSHA
+	}
+
+	branchCond := func(mr *gitlab.MergeRequest) bool {
+		return len(branches) == 0 || utils.InStringArray(mr.TargetBranch, branches)
+	}
+
+	condition := func(mr *gitlab.MergeRequest) bool {
+		return afterCond(mr) && beforeCond(mr) && branchCond(mr)
+	}
+
+	changelog = ReleaseNotesFromMR(mrs, condition)
+	return
 }
