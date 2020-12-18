@@ -57,6 +57,38 @@ successfully to release v1.0.1
 
 ![](./docs/pics/release-entrypoint.png)
 
+
+## Merge Request 标题格式
+
+`walle` 使用 Merge Request 标题生成 release notes。遵循以下规则:
+
+```
+<type>(<scope>): <title content>
+  │       │             │
+  │       │             └─⫸ 标题
+  │       │
+  │       └─⫸ Change Scope: 不限定
+  │
+  └─⫸ Change Type: feat|fix|refactor|...
+```
+
+`walle` 根据不同的 type 生成不同类型的 release note，不在列表中的 type，不会被列入 release notes。
+
+```
+feat     -> New Features
+fix      -> Bug Fix
+refactor -> Changes 
+```
+
+生成 `release note` 格式为：
+
+```
+<scope>: <title content> (#MR-ID) @author
+```
+
+`scope` 可以为空。
+
+
 ## 在 GitLab CI 自动运行
 
 在 CI 环境可以使用构建好的 docker 镜像运行 `walle`，`docker.bizseer.com/bizseer/walle:<version>`
