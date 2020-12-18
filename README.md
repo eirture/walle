@@ -44,7 +44,50 @@ $ walle release --ref master -b dev -b master -t v1.0.1
 successfully to release v1.0.1
 ```
 
-可以在仓库的 release 页面查看相应的 release 信息 `https://code.bizseer.com/<project-path>/-/releases`
+会生成一个如下的 release 信息:
+
+>
+> _New Features:_
+> - release: support update a release which already exists ([#4](https://code.bizseer.com/liujie/walle/-/merge_requests/4)) @liujie
+> - version: add version command ([#3](https://code.bizseer.com/liujie/walle/-/merge_requests/3)) @liujie
+> - 支持 release 命令创建 tag ([#1](https://code.bizseer.com/liujie/walle/-/merge_requests/1)) @liujie
+>
+
+![](./docs/pics/release-entrypoint.png)
+
+可以在仓库的 release 页面查看相应的发布信息。
+
+
+## Merge Request 标题格式
+
+`walle` 使用 Merge Request 标题生成 release notes。遵循以下规则:
+
+```
+<type>(<scope>): <title content>
+  │       │             │
+  │       │             └─⫸ 标题
+  │       │
+  │       └─⫸ Change Scope: 不限定
+  │
+  └─⫸ Change Type: feat|fix|refactor|...
+```
+
+`walle` 根据不同的 type 生成不同类型的 release note，不在列表中的 type，不会被列入 release notes。
+
+```
+feat     -> New Features
+fix      -> Bug Fix
+refactor -> Changes 
+```
+
+生成 `release note` 格式为：
+
+```
+<scope>: <title content> (#MR-ID) @author
+```
+
+`scope` 可以为空。
+
 
 ## 在 GitLab CI 自动运行
 
