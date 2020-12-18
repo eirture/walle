@@ -91,6 +91,36 @@ $ git tag v0.0.1 master
 $ git push --tags
 ```
 
+## Merge Request 标题格式
+
+`walle` 使用 Merge Request 标题生成 release notes。遵循以下规则:
+
+```
+<type>(<scope>): <title content>
+  │       │             │
+  │       │             └─⫸ 标题
+  │       │
+  │       └─⫸ Change Scope: 不限定
+  │
+  └─⫸ Change Type: feat|fix|refactor|...
+```
+
+`walle` 根据不同的 type 生成不同类型的 release note，不在列表中的 type，不会被列入 release notes。
+
+```
+feat     -> `New Features`
+fix      -> `Bug Fix`
+refactor -> `Changes` 
+```
+
+生成 `release note` 格式为：
+
+```
+<scope>: <title content> (#MR-ID) `\@Author`
+```
+
+`scope` 可以为空。
+
 ## Changelog
 
 详细请查看 [walle/releases](https://code.bizseer.com/liujie/walle/-/releases)
