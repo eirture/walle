@@ -73,6 +73,13 @@ release:
 
 将变量中的 `<your-gitlab-token>` 替换为真实的 token (需要 `api`, `read_api`, `read_repository`, `write_repository` 权限)。
 
+创建并推送 tag 来触发作业:
+
+```shell
+$ git tag v0.0.1 master
+$ git push --tags
+```
+
 ## Changelog
 
 详细请查看 [walle/releases](https://code.bizseer.com/liujie/walle/-/releases)
