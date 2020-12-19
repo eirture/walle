@@ -14,7 +14,8 @@ export CGO_ENABLED=0
 GO_LDFLAGS := -X walle/pkg/build.Version=$(WALLE_VERSION) $(GO_LDFLAGS)
 GO_LDFLAGS := -X walle/pkg/build.Date=$(BUILD_DATE) $(GO_LDFLAGS)
 
-.PHONY: build
+
+.PHONY: bin/walle
 bin/walle: $(BUILD_FILES)
 	go build -trimpath -ldflags "${GO_LDFLAGS}" -o "$@" ./pkg/cmd/walle
 
