@@ -6,7 +6,7 @@
 _New Features:_
 - changelog: 支持修改 changlog 文件并自动提交 MR ([#12](https://code.bizseer.com/liujie/walle/-/merge_requests/12)) @liujie
 
-# v0.0.1 (2020-12-19)
+# v0.0.1 (2020-12-18)
 _New Features:_
 - release: support update a release which already exists ([#4](https://code.bizseer.com/liujie/walle/-/merge_requests/4)) @liujie
 - version: add version command ([#3](https://code.bizseer.com/liujie/walle/-/merge_requests/3)) @liujie
