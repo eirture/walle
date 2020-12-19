@@ -77,3 +77,20 @@ type TagRequest struct {
 	Message            string `json:"message"`
 	ReleaseDescription string `json:"release_description"`
 }
+
+type RepoFileRequest struct {
+	Branch        string
+	CommitMessage string
+	Encoding      string
+	Content       string
+}
+
+type MergeRequestRequest struct {
+	SourceBranch       string `json:"source_branch"`
+	TargetBranch       string `json:"target_branch"`
+	Title              string `json:"title"`
+	AssigneeID         string `json:"assignee_id,omitempty"`
+	Description        string `json:"description,omitempty"`
+	RemoveSourceBranch bool   `json:"remove_source_branch"`
+	Squash             bool   `json:"squash"`
+}

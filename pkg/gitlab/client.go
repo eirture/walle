@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -42,6 +43,8 @@ func (s *standardTime) Until(t time.Time) time.Duration {
 }
 
 type MergeRequestClient interface {
+	CreateMergeRequest(project string, req MergeRequestRequest) (*MergeRequest, error)
+	AcceptMR(project string, mrid int) (*MergeRequest, error)
 	ListMergeRequests(project string, updatedAfter time.Time) ([]MergeRequest, error)
 }
 
@@ -49,6 +52,15 @@ type TagClient interface {
 	ListTags(project string) ([]Tag, error)
 	CreateTag(project string, req TagRequest) error
 	UpsertRelease(project string, tag, desc string) error
+}
+
+type RepoClient interface {
+	GetFile(project, filepath, ref string) (string, error)
+	UpdateFile(project, filepath string, req RepoFileRequest) error
+}
+
+type ProjectClient interface {
+	GetProject(project string) (Project, error)
 }
 
 type Config interface {
@@ -59,6 +71,8 @@ type Config interface {
 type Client interface {
 	MergeRequestClient
 	TagClient
+	RepoClient
+	ProjectClient
 }
 
 type client struct {
@@ -251,6 +265,33 @@ func (c *client) ListMergeRequests(project string, mergedAfter time.Time) ([]Mer
 	return mrs, err
 }
 
+func (c *client) CreateMergeRequest(project string, req MergeRequestRequest) (*MergeRequest, error) {
+	path := fmt.Sprintf("/projects/%s/merge_requests", url.PathEscape(project))
+	mr := MergeRequest{}
+	_, err := c.request(&request{
+		method:      http.MethodPost,
+		path:        path,
+		requestBody: &req,
+		exitCodes:   []int{200},
+	}, &mr)
+	return &mr, err
+}
+
+func (c *client) AcceptMR(project string, mrid int) (*MergeRequest, error) {
+	path := fmt.Sprintf(
+		"/projects/%s/merge_requests/%s/merge",
+		url.PathEscape(project),
+		mrid,
+	)
+	mr := MergeRequest{}
+	_, err := c.request(&request{
+		method:    http.MethodPut,
+		path:      path,
+		exitCodes: []int{200},
+	}, &mr)
+	return &mr, err
+}
+
 func (c *client) ListTags(project string) ([]Tag, error) {
 	c.log("ListTags", project)
 	var tags []Tag
@@ -349,6 +390,55 @@ func (c *client) UpsertRelease(project string, tag, desc string) error {
 		exitCodes: []int{200, 201},
 	}, nil)
 	return err
+}
+
+func (c *client) GetFile(project, filepath, ref string) (string, error) {
+	path := fmt.Sprintf(
+		"/projects/%s/repository/files/%s?ref=%s",
+		url.PathEscape(project),
+		url.PathEscape(filepath),
+		ref,
+	)
+	file := struct {
+		Content string `json:"content"`
+	}{}
+	_, err := c.request(&request{
+		method:      http.MethodGet,
+		path:        path,
+		requestBody: nil,
+		exitCodes:   []int{200},
+	}, &file)
+	if err != nil {
+		return "", err
+	}
+	content, err := base64.StdEncoding.DecodeString(file.Content)
+	return string(content), err
+
+}
+
+func (c *client) UpdateFile(project, filepath string, req RepoFileRequest) error {
+	path := fmt.Sprintf(
+		"/projects/%s/repository/files/%s",
+		url.PathEscape(project),
+		url.PathEscape(filepath),
+	)
+	_, err := c.request(&request{
+		method:      http.MethodPut,
+		path:        path,
+		requestBody: &req,
+		exitCodes:   []int{200},
+	}, nil)
+	return err
+}
+
+func (c *client) GetProject(project string) (pro Project, err error) {
+	path := fmt.Sprintf("/projects/%s", url.PathEscape(project))
+	_, err = c.request(&request{
+		method:    http.MethodGet,
+		path:      path,
+		exitCodes: []int{200},
+	}, &pro)
+	return
 }
 
 func (c *client) readPaginateResults(path string, newObj func() interface{}, accumulate func(interface{})) error {
