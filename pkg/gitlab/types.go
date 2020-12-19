@@ -34,13 +34,13 @@ type MergeRequest struct {
 }
 
 type Project struct {
-	ID            int
-	Description   string
-	DefaultBranch string
-	Visibility    string
-	WebURL        string
-	TagList       []string
-	Owner         User
+	ID            int      `json:"id"`
+	Description   string   `json:"description"`
+	DefaultBranch string   `json:"default_branch"`
+	Visibility    string   `json:"visibility"`
+	WebURL        string   `json:"web_url"`
+	TagList       []string `json:"tag_list"`
+	Owner         User     `json:"owner"`
 }
 
 type Release struct {
@@ -76,4 +76,21 @@ type TagRequest struct {
 	Ref                string `json:"ref"`
 	Message            string `json:"message"`
 	ReleaseDescription string `json:"release_description"`
+}
+
+type RepoFileRequest struct {
+	Branch        string `json:"branch"`
+	CommitMessage string `json:"commit_message"`
+	Encoding      string `json:"encoding,omitempty"`
+	Content       string `json:"content"`
+}
+
+type MergeRequestRequest struct {
+	SourceBranch       string `json:"source_branch"`
+	TargetBranch       string `json:"target_branch"`
+	Title              string `json:"title"`
+	AssigneeID         string `json:"assignee_id,omitempty"`
+	Description        string `json:"description,omitempty"`
+	RemoveSourceBranch bool   `json:"remove_source_branch"`
+	Squash             bool   `json:"squash"`
 }
