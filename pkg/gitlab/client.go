@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -42,13 +43,26 @@ func (s *standardTime) Until(t time.Time) time.Duration {
 }
 
 type MergeRequestClient interface {
+	CreateMergeRequest(project string, req MergeRequestRequest) (*MergeRequest, error)
+	AcceptMR(project string, mrid int) (*MergeRequest, error)
 	ListMergeRequests(project string, updatedAfter time.Time) ([]MergeRequest, error)
 }
 
 type TagClient interface {
+	GetTag(project, tagName string) (Tag, error)
 	ListTags(project string) ([]Tag, error)
 	CreateTag(project string, req TagRequest) error
 	UpsertRelease(project string, tag, desc string) error
+}
+
+type RepoClient interface {
+	GetFile(project, filepath, ref string) (string, error)
+	UpdateFile(project, filepath string, req RepoFileRequest) error
+	NewBranch(project, branchName, ref string) error
+}
+
+type ProjectClient interface {
+	GetProject(project string) (Project, error)
 }
 
 type Config interface {
@@ -59,6 +73,8 @@ type Config interface {
 type Client interface {
 	MergeRequestClient
 	TagClient
+	RepoClient
+	ProjectClient
 }
 
 type client struct {
@@ -165,20 +181,27 @@ func (c *client) requestRetry(method, path string, body interface{}) (*http.Resp
 
 func (c *client) doRequest(method, path string, body interface{}) (*http.Response, error) {
 	var buf io.Reader
+	headers := make(map[string]string)
 	if body != nil {
 		b, err := json.Marshal(body)
 		if err != nil {
 			return nil, err
 		}
 		buf = bytes.NewBuffer(b)
+		headers["Content-Type"] = "application/json"
 	}
 
 	req, err := http.NewRequest(method, path, buf)
 	if err != nil {
 		return nil, err
 	}
+
 	if header := c.authHeader(); len(header) > 0 {
 		req.Header.Set("Authorization", header)
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 
 	req.Close = true
@@ -249,6 +272,32 @@ func (c *client) ListMergeRequests(project string, mergedAfter time.Time) ([]Mer
 		return nil, err
 	}
 	return mrs, err
+}
+
+func (c *client) CreateMergeRequest(project string, req MergeRequestRequest) (*MergeRequest, error) {
+	path := fmt.Sprintf("/projects/%s/merge_requests", url.PathEscape(project))
+	mr := MergeRequest{}
+	_, err := c.request(&request{
+		method:      http.MethodPost,
+		path:        path,
+		requestBody: &req,
+		exitCodes:   []int{201},
+	}, &mr)
+	return &mr, err
+}
+
+func (c *client) AcceptMR(project string, mrid int) (*MergeRequest, error) {
+	path := fmt.Sprintf("/projects/%s/merge_requests/%d/merge",
+		url.PathEscape(project),
+		mrid,
+	)
+	mr := MergeRequest{}
+	_, err := c.request(&request{
+		method:    http.MethodPut,
+		path:      path,
+		exitCodes: []int{200},
+	}, &mr)
+	return &mr, err
 }
 
 func (c *client) ListTags(project string) ([]Tag, error) {
@@ -349,6 +398,69 @@ func (c *client) UpsertRelease(project string, tag, desc string) error {
 		exitCodes: []int{200, 201},
 	}, nil)
 	return err
+}
+
+func (c *client) GetFile(project, filepath, ref string) (string, error) {
+	path := fmt.Sprintf(
+		"/projects/%s/repository/files/%s?ref=%s",
+		url.PathEscape(project),
+		url.PathEscape(filepath),
+		ref,
+	)
+	file := struct {
+		Content string `json:"content"`
+	}{}
+	_, err := c.request(&request{
+		method:      http.MethodGet,
+		path:        path,
+		requestBody: nil,
+		exitCodes:   []int{200},
+	}, &file)
+	if err != nil {
+		return "", err
+	}
+	content, err := base64.StdEncoding.DecodeString(file.Content)
+	return string(content), err
+
+}
+
+func (c *client) UpdateFile(project, filepath string, req RepoFileRequest) error {
+	path := fmt.Sprintf(
+		"/projects/%s/repository/files/%s",
+		url.PathEscape(project),
+		url.PathEscape(filepath),
+	)
+	_, err := c.request(&request{
+		method:      http.MethodPut,
+		path:        path,
+		requestBody: req,
+		exitCodes:   []int{200},
+	}, nil)
+	return err
+}
+
+func (c *client) NewBranch(project, branchName, ref string) error {
+	path := fmt.Sprintf("/projects/%s/repository/branches", url.PathEscape(project))
+	params := url.Values{
+		"branch": []string{branchName},
+		"ref":    []string{ref},
+	}
+	_, err := c.request(&request{
+		method:    http.MethodPost,
+		path:      path + "?" + params.Encode(),
+		exitCodes: []int{201},
+	}, nil)
+	return err
+}
+
+func (c *client) GetProject(project string) (pro Project, err error) {
+	path := fmt.Sprintf("/projects/%s", url.PathEscape(project))
+	_, err = c.request(&request{
+		method:    http.MethodGet,
+		path:      path,
+		exitCodes: []int{200},
+	}, &pro)
+	return
 }
 
 func (c *client) readPaginateResults(path string, newObj func() interface{}, accumulate func(interface{})) error {
