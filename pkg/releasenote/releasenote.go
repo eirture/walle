@@ -90,7 +90,7 @@ func ChangelogFromMR(client gitlab.Client, project, tagName string, branches []s
 	afterAt, beforeAt := time.Unix(0, 0), time.Now()
 
 	var afterAtSHA, beforeAtSHA string
-	for i := len(tags) - 1; i >= 0; i-- {
+	for i := 0; i < len(tags); i++ {
 		tag := tags[i]
 		if tag.Name == tagName {
 			exists = true
