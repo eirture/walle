@@ -65,3 +65,4 @@ release:
     - walle version
     - export WALLE_GITLAB_HOST=$CI_SERVER_URL
     - walle release -p $CI_PROJECT_PATH --ref $CI_COMMIT_SHA -t $CI_BUILD_TAG
+    - walle changelog -p $CI_PROJECT_PATH --ref $CI_COMMIT_SHA -t $CI_BUILD_TAG
