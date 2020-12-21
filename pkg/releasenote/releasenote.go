@@ -71,7 +71,7 @@ func ReleaseNotesFromMR(mrs []gitlab.MergeRequest, condition func(mr *gitlab.Mer
 			continue
 		}
 		titles = append(titles, fmt.Sprintf(
-			"%s ([#%d](%s)) @%s",
+			"%s ([!%d](%s)) @%s",
 			mr.Title,
 			mr.IID,
 			mr.WebURL,
