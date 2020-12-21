@@ -30,6 +30,7 @@ func NewCmdChangelog(ctx *context.Context) *cobra.Command {
 	cmd.Flags().StringVarP(&opts.branch, "branch", "b", "", "target branch name")
 	cmd.Flags().StringVarP(&opts.filepath, "file", "f", "CHANGELOG.md", "the changelog file path. default is `CHANGELOG.md`")
 	cmd.Flags().BoolVar(&opts.merge, "merge", false, "merge automatically")
+	cmd.Flags().IntVar(&opts.AssigneeID, "assignee", 0, "assignee user ID")
 	_ = cmd.MarkFlagRequired("tag")
 
 	return cmd
@@ -41,10 +42,11 @@ type options struct {
 	project  string
 	merge    bool
 
-	ref      string
-	branch   string
-	filepath string
-	tag      string
+	ref        string
+	branch     string
+	filepath   string
+	tag        string
+	AssigneeID int
 }
 
 func (o *options) Run(cmd *cobra.Command, args []string) (err error) {
@@ -108,6 +110,7 @@ func (o *options) Run(cmd *cobra.Command, args []string) (err error) {
 		Title:              msg,
 		Description:        msg,
 		RemoveSourceBranch: true,
+		AssigneeID:         o.AssigneeID,
 	}
 	mr, err := o.client.CreateMergeRequest(o.project, mrReq)
 	if err != nil {
