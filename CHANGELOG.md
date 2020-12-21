@@ -1,3 +1,7 @@
+# v0.1.2 (2020-12-21)
+_New Features:_
+- changelogs: 创建 MR 时可以指定分配者 ID ([#16](https://code.bizseer.com/liujie/walle/-/merge_requests/16)) @liujie
+
 # v0.1.1 (2020-12-19)
 **Bug Fix:**
 - release: 修复 tag 已存在问题 ([#13](https://code.bizseer.com/liujie/walle/-/merge_requests/13)) @liujie
