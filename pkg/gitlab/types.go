@@ -89,7 +89,7 @@ type MergeRequestRequest struct {
 	SourceBranch       string `json:"source_branch"`
 	TargetBranch       string `json:"target_branch"`
 	Title              string `json:"title"`
-	AssigneeID         string `json:"assignee_id,omitempty"`
+	AssigneeID         int    `json:"assignee_id,omitempty"`
 	Description        string `json:"description,omitempty"`
 	RemoveSourceBranch bool   `json:"remove_source_branch"`
 	Squash             bool   `json:"squash"`
