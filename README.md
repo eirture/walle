@@ -123,6 +123,17 @@ $ git tag v0.0.1 master
 $ git push --tags
 ```
 
+## 自动修改变更记录文件
+
+`walle` 支持通过 release note 自动生成修改 changelog 文件。并自动创建 CHANGELOG 文件修改的 Merge Request。
+
+如以下命令，于 `liujie/walle` 仓库，基于 `master` 分支，修改 `CHANGELOG.md` 文件中 `v0.0.1` 版本的变更记录，
+并自动创建修改 `CHANGELOG.md` 文件的 MR。
+
+```shell
+$ walle changelog -p liujie/walle --ref master -t v0.0.1 -f CHANGELOG.md
+```
+
 ## Changelog
 
 详细请查看 [walle/releases](https://code.bizseer.com/liujie/walle/-/releases)
