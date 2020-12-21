@@ -51,6 +51,17 @@ binary:
   extends:
     - .only_release
 
+docker_image:
+  stage: release
+  tags:
+    - docker
+  script:
+    - VERSION=${CI_BUILD_TAG:1}
+    - TAG=docker.bizseer.com/bizseer/walle:$VERSION
+    - echo $TAG
+    - docker build --build-arg VERSION=$VERSION -t $TAG ./docker
+    - docker push $TAG
+
 release:
   image: alpine:3.12.3
   stage: release
