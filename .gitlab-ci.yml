@@ -8,6 +8,9 @@ include:
   project: efficiency/gitlab-ci-template
   file: templates/.common.gitlab-ci.yml
 
+variables:
+  CLOSE_SONAR_SCAN: 'true'
+
 lint:
   image: docker.bizseer.com/golangci/golangci-lint:v1.30
   stage: test
