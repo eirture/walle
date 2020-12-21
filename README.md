@@ -1,6 +1,6 @@
 # Walle
 
-`Walle` 是基于 GitLab MR (Merge Request) 自动生成 release notes 的工具。
+[`Walle`](https://code.bizseer.com/liujie/walle) 是基于 GitLab MR (Merge Request) 自动生成 release notes 的工具。
 
 ## 介绍
 
