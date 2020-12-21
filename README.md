@@ -136,4 +136,4 @@ $ walle changelog -p liujie/walle --ref master -t v0.0.1 -f CHANGELOG.md
 
 ## Changelog
 
-详细请查看 [walle/releases](https://code.bizseer.com/liujie/walle/-/releases)
+详细请查看 [CHANGELOG.md](/CHANGELOG.md)
