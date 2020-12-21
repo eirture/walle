@@ -70,7 +70,7 @@ docker_image:
     - docker build --build-arg VERSION=$VERSION -t $TAG ./docker
     - docker push $TAG
 
-release:
+release_note:
   image: alpine:3.12.3
   stage: release
   extends:
