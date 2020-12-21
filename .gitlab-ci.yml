@@ -4,6 +4,10 @@ stages:
   - pre-release
   - release
 
+include:
+  project: efficiency/gitlab-ci-template
+  file: templates/.common.gitlab-ci.yml
+
 lint:
   image: docker.bizseer.com/golangci/golangci-lint:v1.30
   stage: test
@@ -53,8 +57,9 @@ binary:
 
 docker_image:
   stage: release
-  tags:
-    - docker
+  extends:
+    - .docker
+    - .only_release
   script:
     - VERSION=${CI_BUILD_TAG:1}
     - TAG=docker.bizseer.com/bizseer/walle:$VERSION
