@@ -62,7 +62,6 @@ docker_image:
   stage: release
   extends:
     - .docker
-    - .only_release
   script:
     - VERSION=${CI_BUILD_TAG:1}
     - TAG=docker.bizseer.com/bizseer/walle:$VERSION
