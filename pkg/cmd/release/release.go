@@ -55,11 +55,11 @@ type releaseOptions struct {
 
 func (o *releaseOptions) Run(cmd *cobra.Command, args []string) error {
 
-	tagExists, result, err := releasenote.ChangelogFromMR(
+	tagExists, result, err := releasenote.GetReleaseNotesByTag(
 		o.client,
 		o.project,
 		o.tag,
-		o.branches,
+		o.ref,
 	)
 	if err != nil {
 		return err

@@ -6,8 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"walle/pkg/gitlab"
-	"walle/pkg/utils"
 )
 
 const (
@@ -98,48 +99,63 @@ func ReleaseNotesFromMR(mrs []gitlab.MergeRequest, condition func(mr *gitlab.Mer
 	return GenerateReleaseNotes(titles)
 }
 
-func ChangelogFromMR(client gitlab.Client, project, tagName string, branches []string) (exists bool, changelog string, err error) {
+func GetReleaseNotesByTag(client gitlab.Client, project, tagName, ref string) (
+	tagExists bool, releaseNotes string, err error,
+) {
 	tags, err := client.ListTags(project)
 	if err != nil {
 		return
 	}
-	afterAt, beforeAt := time.Unix(0, 0), time.Now()
+	var sinceAt, untilAt *time.Time
 
-	var afterAtSHA, beforeAtSHA string
 	for i := 0; i < len(tags); i++ {
 		tag := tags[i]
 		if tag.Name == tagName {
-			exists = true
-			beforeAt = tag.Commit.CreatedAt
-			beforeAtSHA = tag.Commit.ID
+			tagExists = true
+			untilAt = &tag.Commit.CreatedAt
 			continue
 		}
-		afterAtSHA = tag.Commit.ID
-		afterAt = tag.Commit.CreatedAt
+		sinceAt = &tag.Commit.CreatedAt
 		break
 	}
 
-	mrs, err := client.ListMergeRequests(project, afterAt)
+	commits, err := client.ListCommits(project, ref, sinceAt, untilAt)
 	if err != nil {
+		logrus.Errorf("An error occurred while list commits. %v", err)
 		return
 	}
-
-	afterCond := func(mr *gitlab.MergeRequest) bool {
-		return mr.MergeCommitSHA != afterAtSHA
+	if len(commits) > 0 {
+		// the first commit belong to the tag before this
+		commits = commits[1:]
 	}
 
-	beforeCond := func(mr *gitlab.MergeRequest) bool {
-		return beforeAt.After(mr.MergedAt) || beforeAtSHA == "" || beforeAtSHA == mr.MergeCommitSHA
-	}
-
-	branchCond := func(mr *gitlab.MergeRequest) bool {
-		return len(branches) == 0 || utils.InStringArray(mr.TargetBranch, branches)
-	}
-
-	condition := func(mr *gitlab.MergeRequest) bool {
-		return afterCond(mr) && beforeCond(mr) && branchCond(mr)
-	}
-
-	changelog = ReleaseNotesFromMR(mrs, condition)
+	notes := getNotes(commits)
+	releaseNotes = GenerateReleaseNotes(notes)
 	return
+}
+
+func getNotes(commits []*gitlab.Commit) (filtered []string) {
+	for _, commit := range commits {
+		res := notesForCommit(commit.Message)
+		if res == "" {
+			continue
+		}
+		filtered = append(filtered, res)
+	}
+	return
+}
+
+func notesForCommit(commitMessage string) string {
+	regex := regexp.MustCompile(`\n\n(?P<notes>[^\n]*)\n\nSee merge request`)
+	match := regex.FindStringSubmatch(commitMessage)
+	if match == nil {
+		return ""
+	}
+
+	for i, name := range regex.SubexpNames() {
+		if i != 0 && name != "" {
+			return match[i]
+		}
+	}
+	return ""
 }
