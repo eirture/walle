@@ -1,6 +1,6 @@
 # Walle
 
-`Walle` 是基于 GitLab MR (Merge Request) 自动生成 release notes 的工具。
+[`Walle`](https://code.bizseer.com/liujie/walle) 是基于 GitLab MR (Merge Request) 自动生成 release notes 的工具。
 
 ## 介绍
 
@@ -83,7 +83,7 @@ refactor -> Changes
 生成 `release note` 格式为：
 
 ```
-<scope>: <title content> (#MR-ID) @author
+<scope>: <title content> (!MR-ID) @author
 ```
 
 `scope` 可以为空。
@@ -136,4 +136,4 @@ $ walle changelog -p liujie/walle --ref master -t v0.0.1 -f CHANGELOG.md
 
 ## Changelog
 
-详细请查看 [walle/releases](https://code.bizseer.com/liujie/walle/-/releases)
+详细请查看 [CHANGELOG.md](/CHANGELOG.md)
