@@ -1,6 +1,6 @@
 # v0.1.2 (2020-12-21)
 _Changes:_
-- releasenote: 修改 MR 链接名 ([!19](https://code.bizseer.com/liujie/walle/-/merge_requests/19)) @liujie
+- releasenote: 修改 MR 链接名 EE-623 ([!19](https://code.bizseer.com/liujie/walle/-/merge_requests/19)) @liujie
 
 _New Features:_
 - changelogs: 创建 MR 时可以指定分配者 ID ([!16](https://code.bizseer.com/liujie/walle/-/merge_requests/16)) @liujie
