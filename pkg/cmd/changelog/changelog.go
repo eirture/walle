@@ -108,7 +108,7 @@ func (o *options) Run(cmd *cobra.Command, args []string) (err error) {
 		SourceBranch:       branchName,
 		TargetBranch:       targetBranch,
 		Title:              msg,
-		Description:        msg,
+		Description:        "/release-note-none",
 		RemoveSourceBranch: true,
 		AssigneeID:         o.AssigneeID,
 	}
