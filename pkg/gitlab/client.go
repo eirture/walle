@@ -25,6 +25,8 @@ const (
 	defaultMaxRetries      = 8
 	defaultMaxInitialDelay = 2 * time.Second
 	defaultMaxSleepTime    = 2 * time.Minute
+
+	datetimeFormat = time.RFC3339
 )
 
 type timeClient interface {
@@ -43,6 +45,7 @@ func (s *standardTime) Until(t time.Time) time.Duration {
 }
 
 type MergeRequestClient interface {
+	GetMergeRequest(project string, iid int) (*MergeRequest, error)
 	CreateMergeRequest(project string, req MergeRequestRequest) (*MergeRequest, error)
 	AcceptMR(project string, mrid int) (*MergeRequest, error)
 	ListMergeRequests(project string, updatedAfter time.Time) ([]MergeRequest, error)
@@ -59,6 +62,7 @@ type RepoClient interface {
 	GetFile(project, filepath, ref string) (string, error)
 	UpdateFile(project, filepath string, req RepoFileRequest) error
 	NewBranch(project, branchName, ref string) error
+	ListCommits(project, ref string, since, until *time.Time) ([]*Commit, error)
 }
 
 type ProjectClient interface {
@@ -250,7 +254,7 @@ func (c *client) ListMergeRequests(project string, mergedAfter time.Time) ([]Mer
 	values := url.Values{
 		"pre_page":      []string{"100"},
 		"state":         []string{"merged"},
-		"updated_after": []string{mergedAfter.Format(time.RFC3339)},
+		"updated_after": []string{mergedAfter.Format(datetimeFormat)},
 	}
 	err := c.readPaginatedResultsWithValues(
 		path,
@@ -272,6 +276,21 @@ func (c *client) ListMergeRequests(project string, mergedAfter time.Time) ([]Mer
 		return nil, err
 	}
 	return mrs, err
+}
+
+func (c *client) GetMergeRequest(project string, iid int) (*MergeRequest, error) {
+	path := fmt.Sprintf("/projects/%s/merge_requests/%d", url.PathEscape(project), iid)
+
+	mr := &MergeRequest{}
+	_, err := c.request(&request{
+		method:    http.MethodGet,
+		path:      path,
+		exitCodes: []int{200},
+	}, mr)
+	if err != nil {
+		return nil, err
+	}
+	return mr, nil
 }
 
 func (c *client) CreateMergeRequest(project string, req MergeRequestRequest) (*MergeRequest, error) {
@@ -451,6 +470,36 @@ func (c *client) NewBranch(project, branchName, ref string) error {
 		exitCodes: []int{201},
 	}, nil)
 	return err
+}
+
+func (c *client) ListCommits(project, ref string, since, until *time.Time) ([]*Commit, error) {
+	path := fmt.Sprintf("/projects/%s/repository/commits", url.PathEscape(project))
+	values := url.Values{}
+	if ref != "" {
+		values.Set("ref_name", ref)
+	}
+	if since != nil {
+		values.Set("since", since.Format(datetimeFormat))
+	}
+	if until != nil {
+		values.Set("until", until.Format(datetimeFormat))
+	}
+
+	var results []*Commit
+	err := c.readPaginatedResultsWithValues(
+		path,
+		values,
+		func() interface{} {
+			return &[]*Commit{}
+		},
+		func(obj interface{}) {
+			results = append(results, *(obj.(*[]*Commit))...)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
 }
 
 func (c *client) GetProject(project string) (pro Project, err error) {

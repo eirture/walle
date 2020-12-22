@@ -3,8 +3,11 @@ package releasenote
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"walle/pkg/gitlab"
 	"walle/pkg/utils"
@@ -16,6 +19,8 @@ const (
 	titleNewFeature    = "_New Features:_"
 	titleDocumentation = "Documentation:"
 	titleOther         = "Other:"
+
+	labelReleaseNoteNone = "release-note-none"
 )
 
 var (
@@ -36,12 +41,36 @@ var (
 	}
 )
 
-func GenerateReleaseNotes(items []string) string {
+var noteExclusionFilters = []*regexp.Regexp{
+	// 'none','n/a','na' case insensitive with optional trailing
+	// whitespace, wrapped in ``` with/without release-note identifier
+	// the 'none','n/a','na' can also optionally be wrapped in quotes ' or "
+	regexp.MustCompile("(?i)```release-note[s]?\\s*('|\")?(none|n/a|na)?('|\")?\\s*```"),
+
+	// simple '/release-note-none' tag
+	regexp.MustCompile("/release-note-none"),
+}
+
+// MatchesExcludeFilter returns true if the string matches an excluded release note
+func MatchesExcludeFilter(msg string) bool {
+	return matchesFilter(msg, noteExclusionFilters)
+}
+
+func matchesFilter(msg string, filters []*regexp.Regexp) bool {
+	for _, filter := range filters {
+		if filter.MatchString(msg) {
+			return true
+		}
+	}
+	return false
+}
+
+func joinNotes(items []string) string {
 	releases := make(map[string][]string)
 	for _, i := range items {
 		is := strings.SplitN(i, ":", 2)
 		if len(is) != 2 {
-			continue
+			is = []string{"", i}
 		}
 		tag, summary := strings.Trim(is[0], " "), strings.Trim(is[1], " ")
 		if strings.Contains(tag, "(") {
@@ -77,13 +106,13 @@ func GenerateReleaseNotes(items []string) string {
 	return strings.Join(values, "\n")
 }
 
-func ReleaseNotesFromMR(mrs []gitlab.MergeRequest, condition func(mr *gitlab.MergeRequest) bool) string {
+func generateReleaseNotes(mrs []*gitlab.MergeRequest, condition func(mr *gitlab.MergeRequest) bool) string {
 	if condition == nil {
 		condition = func(mr *gitlab.MergeRequest) bool { return true }
 	}
 	var titles []string
 	for _, mr := range mrs {
-		if !condition(&mr) {
+		if !condition(mr) {
 			continue
 		}
 		titles = append(titles, fmt.Sprintf(
@@ -95,51 +124,71 @@ func ReleaseNotesFromMR(mrs []gitlab.MergeRequest, condition func(mr *gitlab.Mer
 		))
 	}
 
-	return GenerateReleaseNotes(titles)
+	return joinNotes(titles)
 }
 
-func ChangelogFromMR(client gitlab.Client, project, tagName string, branches []string) (exists bool, changelog string, err error) {
+func GetReleaseNotesByTag(client gitlab.Client, project, tagName, ref string) (
+	tagExists bool, releaseNotes string, err error,
+) {
 	tags, err := client.ListTags(project)
 	if err != nil {
 		return
 	}
-	afterAt, beforeAt := time.Unix(0, 0), time.Now()
+	var sinceAt, untilAt *time.Time
 
-	var afterAtSHA, beforeAtSHA string
 	for i := 0; i < len(tags); i++ {
 		tag := tags[i]
 		if tag.Name == tagName {
-			exists = true
-			beforeAt = tag.Commit.CreatedAt
-			beforeAtSHA = tag.Commit.ID
+			tagExists = true
+			untilAt = &tag.Commit.CreatedAt
 			continue
 		}
-		afterAtSHA = tag.Commit.ID
-		afterAt = tag.Commit.CreatedAt
+		sinceAt = &tag.Commit.CreatedAt
 		break
 	}
 
-	mrs, err := client.ListMergeRequests(project, afterAt)
+	commits, err := client.ListCommits(project, ref, sinceAt, untilAt)
 	if err != nil {
+		logrus.Errorf("An error occurred while list commits. %v", err)
 		return
 	}
-
-	afterCond := func(mr *gitlab.MergeRequest) bool {
-		return mr.MergeCommitSHA != afterAtSHA
+	if len(commits) > 0 {
+		// the first commit belong to the tag before this
+		commits = commits[1:]
 	}
 
-	beforeCond := func(mr *gitlab.MergeRequest) bool {
-		return beforeAt.After(mr.MergedAt) || beforeAtSHA == "" || beforeAtSHA == mr.MergeCommitSHA
-	}
-
-	branchCond := func(mr *gitlab.MergeRequest) bool {
-		return len(branches) == 0 || utils.InStringArray(mr.TargetBranch, branches)
+	var mrs []*gitlab.MergeRequest
+	for _, commit := range commits {
+		iid := mrNumForCommitFromMessage(commit.Message)
+		if iid == 0 {
+			continue
+		}
+		mr, err := client.GetMergeRequest(project, iid)
+		if err != nil {
+			logrus.Warnf("an error occurred while get merge request %d. %s", iid, err)
+			continue
+		}
+		mrs = append(mrs, mr)
 	}
 
 	condition := func(mr *gitlab.MergeRequest) bool {
-		return afterCond(mr) && beforeCond(mr) && branchCond(mr)
+		// do not have the label `release-note-none`
+		exclude := MatchesExcludeFilter(mr.Description) || utils.InStringArray(labelReleaseNoteNone, mr.Labels)
+		return !exclude
 	}
+	releaseNotes = generateReleaseNotes(mrs, condition)
+	return
+}
 
-	changelog = ReleaseNotesFromMR(mrs, condition)
+func mrNumForCommitFromMessage(commitMessage string) (mr int) {
+	regex := regexp.MustCompile(`\n\nSee merge request .+!(\d+)$`)
+	match := regex.FindStringSubmatch(commitMessage)
+	if match == nil || len(match) < 2 {
+		return 0
+	}
+	mr, err := strconv.Atoi(match[1])
+	if err != nil {
+		return 0
+	}
 	return
 }
