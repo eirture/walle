@@ -45,7 +45,7 @@ func (s *standardTime) Until(t time.Time) time.Duration {
 }
 
 type MergeRequestClient interface {
-	GetMergeRequest(project string, iid int) (mr *MergeRequest, err error)
+	GetMergeRequest(project string, iid int) (*MergeRequest, error)
 	CreateMergeRequest(project string, req MergeRequestRequest) (*MergeRequest, error)
 	AcceptMR(project string, mrid int) (*MergeRequest, error)
 	ListMergeRequests(project string, updatedAfter time.Time) ([]MergeRequest, error)
@@ -278,14 +278,19 @@ func (c *client) ListMergeRequests(project string, mergedAfter time.Time) ([]Mer
 	return mrs, err
 }
 
-func (c *client) GetMergeRequest(project string, iid int) (mr *MergeRequest, err error) {
+func (c *client) GetMergeRequest(project string, iid int) (*MergeRequest, error) {
 	path := fmt.Sprintf("/projects/%s/merge_requests/%d", url.PathEscape(project), iid)
-	_, err = c.request(&request{
+
+	mr := &MergeRequest{}
+	_, err := c.request(&request{
 		method:    http.MethodGet,
 		path:      path,
 		exitCodes: []int{200},
 	}, mr)
-	return
+	if err != nil {
+		return nil, err
+	}
+	return mr, nil
 }
 
 func (c *client) CreateMergeRequest(project string, req MergeRequestRequest) (*MergeRequest, error) {

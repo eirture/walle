@@ -3,12 +3,14 @@ package releasenote
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
 
 	"walle/pkg/gitlab"
+	"walle/pkg/utils"
 )
 
 const (
@@ -17,6 +19,8 @@ const (
 	titleNewFeature    = "_New Features:_"
 	titleDocumentation = "Documentation:"
 	titleOther         = "Other:"
+
+	labelReleaseNoteNone = "release-note-none"
 )
 
 var (
@@ -37,12 +41,36 @@ var (
 	}
 )
 
-func GenerateReleaseNotes(items []string) string {
+var noteExclusionFilters = []*regexp.Regexp{
+	// 'none','n/a','na' case insensitive with optional trailing
+	// whitespace, wrapped in ``` with/without release-note identifier
+	// the 'none','n/a','na' can also optionally be wrapped in quotes ' or "
+	regexp.MustCompile("(?i)```release-note[s]?\\s*('|\")?(none|n/a|na)?('|\")?\\s*```"),
+
+	// simple '/release-note-none' tag
+	regexp.MustCompile("/release-note-none"),
+}
+
+// MatchesExcludeFilter returns true if the string matches an excluded release note
+func MatchesExcludeFilter(msg string) bool {
+	return matchesFilter(msg, noteExclusionFilters)
+}
+
+func matchesFilter(msg string, filters []*regexp.Regexp) bool {
+	for _, filter := range filters {
+		if filter.MatchString(msg) {
+			return true
+		}
+	}
+	return false
+}
+
+func joinNotes(items []string) string {
 	releases := make(map[string][]string)
 	for _, i := range items {
 		is := strings.SplitN(i, ":", 2)
 		if len(is) != 2 {
-			continue
+			is = []string{"", i}
 		}
 		tag, summary := strings.Trim(is[0], " "), strings.Trim(is[1], " ")
 		if strings.Contains(tag, "(") {
@@ -78,13 +106,13 @@ func GenerateReleaseNotes(items []string) string {
 	return strings.Join(values, "\n")
 }
 
-func ReleaseNotesFromMR(mrs []gitlab.MergeRequest, condition func(mr *gitlab.MergeRequest) bool) string {
+func generateReleaseNotes(mrs []*gitlab.MergeRequest, condition func(mr *gitlab.MergeRequest) bool) string {
 	if condition == nil {
 		condition = func(mr *gitlab.MergeRequest) bool { return true }
 	}
 	var titles []string
 	for _, mr := range mrs {
-		if !condition(&mr) {
+		if !condition(mr) {
 			continue
 		}
 		titles = append(titles, fmt.Sprintf(
@@ -96,7 +124,7 @@ func ReleaseNotesFromMR(mrs []gitlab.MergeRequest, condition func(mr *gitlab.Mer
 		))
 	}
 
-	return GenerateReleaseNotes(titles)
+	return joinNotes(titles)
 }
 
 func GetReleaseNotesByTag(client gitlab.Client, project, tagName, ref string) (
@@ -129,33 +157,38 @@ func GetReleaseNotesByTag(client gitlab.Client, project, tagName, ref string) (
 		commits = commits[1:]
 	}
 
-	notes := getNotes(commits)
-	releaseNotes = GenerateReleaseNotes(notes)
-	return
-}
-
-func getNotes(commits []*gitlab.Commit) (filtered []string) {
+	var mrs []*gitlab.MergeRequest
 	for _, commit := range commits {
-		res := notesForCommit(commit.Message)
-		if res == "" {
+		iid := mrNumForCommitFromMessage(commit.Message)
+		if iid == 0 {
 			continue
 		}
-		filtered = append(filtered, res)
+		mr, err := client.GetMergeRequest(project, iid)
+		if err != nil {
+			logrus.Warnf("an error occurred while get merge request %d. %s", iid, err)
+			continue
+		}
+		mrs = append(mrs, mr)
 	}
+
+	condition := func(mr *gitlab.MergeRequest) bool {
+		// do not have the label `release-note-none`
+		exclude := MatchesExcludeFilter(mr.Description) || utils.InStringArray(labelReleaseNoteNone, mr.Labels)
+		return !exclude
+	}
+	releaseNotes = generateReleaseNotes(mrs, condition)
 	return
 }
 
-func notesForCommit(commitMessage string) string {
-	regex := regexp.MustCompile(`\n\n(?P<notes>[^\n]*)\n\nSee merge request`)
+func mrNumForCommitFromMessage(commitMessage string) (mr int) {
+	regex := regexp.MustCompile(`\n\nSee merge request .+!(\d+)$`)
 	match := regex.FindStringSubmatch(commitMessage)
-	if match == nil {
-		return ""
+	if match == nil || len(match) < 2 {
+		return 0
 	}
-
-	for i, name := range regex.SubexpNames() {
-		if i != 0 && name != "" {
-			return match[i]
-		}
+	mr, err := strconv.Atoi(match[1])
+	if err != nil {
+		return 0
 	}
-	return ""
+	return
 }
