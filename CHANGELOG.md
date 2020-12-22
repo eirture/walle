@@ -1,3 +1,14 @@
+# v0.1.3 (2020-12-22)
+_New Features:_
+- releasenote: 支持所有类型的 MR EE-637 ([!23](https://code.bizseer.com/liujie/walle/-/merge_requests/23)) @liujie
+
+_Changes:_
+- 通过 commit message 获取 MR ([!24](https://code.bizseer.com/liujie/walle/-/merge_requests/24)) @liujie
+- releasenote: 修改 MR 链接名 EE-623 ([!19](https://code.bizseer.com/liujie/walle/-/merge_requests/19)) @liujie
+
+Documentation:
+- readme: 更新变更文档链接 ([!21](https://code.bizseer.com/liujie/walle/-/merge_requests/21)) @liujie
+
 # v0.1.2 (2020-12-21)
 _Changes:_
 - releasenote: 修改 MR 链接名 EE-623 ([!19](https://code.bizseer.com/liujie/walle/-/merge_requests/19)) @liujie
