@@ -27,6 +27,13 @@ var (
 		"docs":     titleDocumentation,
 	}
 	defaultKind = titleOther
+	sortedKinds = []string{
+		titleBugFix,
+		titleNewFeature,
+		titleChanges,
+		titleDocumentation,
+		titleOther,
+	}
 )
 
 func GenerateReleaseNotes(items []string) string {
@@ -60,7 +67,11 @@ func GenerateReleaseNotes(items []string) string {
 	}
 
 	var values []string
-	for k, v := range releases {
+	for _, k := range sortedKinds {
+		v, ok := releases[k]
+		if !ok {
+			continue
+		}
 		values = append(values, fmt.Sprintf("%s\n- %s\n", k, strings.Join(v, "\n- ")))
 	}
 	return strings.Join(values, "\n")
