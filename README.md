@@ -16,7 +16,6 @@ Usage:
   walle release [flags]
 
 Flags:
-  -b, --branch stringArray   the target branch name of merge request
       --dry                  Print changelog only
   -h, --help                 help for release
   -m, --message string       The annotation of tag
@@ -37,10 +36,10 @@ export WALLE_GITLAB_TOKEN=<your-gitlab-token>  # --token <your-gitlab-token>
 export WALLE_PROJECT=liujie/walle  # --project liujie/walle
 ```
 
-如发布 `v1.0.1` 版本，引用 master 分支最新提交。 使用从上一个 tag 到 `v1.0.1` 之间(如何不存在则到现在)合并到 `dev` 和 `master` 分支的 MR 标题，生成 release notes。
+如发布 `v1.0.1` 版本，引用 master 分支最新提交。 使用从上一个 tag 到 `v1.0.1` 之间(如何不存在则到现在)合并到 master 分支的 MR 标题，生成 release notes。
 
 ```shell
-$ walle release --ref master -b dev -b master -t v1.0.1
+$ walle release --ref master -t v1.0.1
 successfully to release v1.0.1
 ```
 
