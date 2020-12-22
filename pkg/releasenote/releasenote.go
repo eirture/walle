@@ -11,18 +11,22 @@ import (
 )
 
 const (
-	titleChanges    = "_Changes:_"
-	titleBugFix     = "**Bug Fix:**"
-	titleNewFeature = "_New Features:_"
+	titleChanges       = "_Changes:_"
+	titleBugFix        = "**Bug Fix:**"
+	titleNewFeature    = "_New Features:_"
+	titleDocumentation = "Documentation:"
+	titleOther         = "Other:"
 )
 
 var (
 	tagMatcherRe = regexp.MustCompile(`^([^( ]+)\((.*)\)$`)
-	scopes       = map[string]string{
+	kinds        = map[string]string{
 		"feat":     titleNewFeature,
 		"fix":      titleBugFix,
 		"refactor": titleChanges,
+		"docs":     titleDocumentation,
 	}
+	defaultKind = titleOther
 )
 
 func GenerateReleaseNotes(items []string) string {
@@ -43,15 +47,16 @@ func GenerateReleaseNotes(items []string) string {
 				}
 			}
 		}
-		if strings.Contains(tag, " ") {
-			continue
-		}
-		key, ok := scopes[tag]
+		kind, ok := kinds[tag]
 		if !ok {
-			continue
+			kind = defaultKind
+			if strings.Contains(tag, " ") {
+				// do nothing for this item
+				summary = i
+			}
 		}
 
-		releases[key] = append(releases[key], summary)
+		releases[kind] = append(releases[kind], summary)
 	}
 
 	var values []string
