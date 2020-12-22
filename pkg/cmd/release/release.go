@@ -30,7 +30,6 @@ func NewReleaseCmd(ctx *context.Context) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringArrayVarP(&opts.branches, "branch", "b", []string{}, "the target branch name of merge request")
 	cmd.Flags().StringVarP(&opts.tag, "tag", "t", "", "The name of a tag (required)")
 	cmd.Flags().StringVarP(&opts.ref, "ref", "", "", "Create tag using commit SHA, another tag name, or branch name (required)")
 	cmd.Flags().StringVarP(&opts.msg, "message", "m", "", "The annotation of tag")
@@ -45,21 +44,20 @@ type releaseOptions struct {
 	cfg    *config.Config
 	logger *logrus.Entry
 
-	branches []string
-	tag      string
-	project  string
-	ref      string
-	msg      string
-	dry      bool
+	tag     string
+	project string
+	ref     string
+	msg     string
+	dry     bool
 }
 
 func (o *releaseOptions) Run(cmd *cobra.Command, args []string) error {
 
-	tagExists, result, err := releasenote.ChangelogFromMR(
+	tagExists, result, err := releasenote.GetReleaseNotesByTag(
 		o.client,
 		o.project,
 		o.tag,
-		o.branches,
+		o.ref,
 	)
 	if err != nil {
 		return err
