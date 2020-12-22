@@ -83,7 +83,7 @@ refactor -> Changes
 生成 `release note` 格式为：
 
 ```
-<scope>: <title content> (#MR-ID) @author
+<scope>: <title content> (!MR-ID) @author
 ```
 
 `scope` 可以为空。
