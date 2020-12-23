@@ -56,7 +56,6 @@ successfully to release v1.0.1
 
 可以在仓库的 release 页面查看相应的发布信息。
 
-
 ## Merge Request 标题格式
 
 `walle` 使用 Merge Request 标题生成 release notes。遵循以下规则:
@@ -76,7 +75,9 @@ successfully to release v1.0.1
 ```
 feat     -> New Features
 fix      -> Bug Fix
-refactor -> Changes 
+refactor -> Changes
+docs     -> Documentation
+...      -> other 
 ```
 
 生成 `release note` 格式为：
@@ -87,6 +88,13 @@ refactor -> Changes
 
 `scope` 可以为空。
 
+如果不想将 MR 添加到 release note 中，可以给 MR 增加 `release-note-none` 标签。或者在 MR 描述增加以下内容：
+
+````
+```release-note
+none
+```
+````
 
 ## 在 GitLab CI 自动运行
 
@@ -102,7 +110,7 @@ release:
   image: docker.bizseer.com/bizseer/walle:0.0.1
   stage: release
   variables:
-    WALLE_GITLAB_TOKEN: <your-gitlab-token> 
+    WALLE_GITLAB_TOKEN: <your-gitlab-token>
   script:
     - walle version
     - export WALLE_GITLAB_HOST=$CI_SERVER_URL
@@ -126,8 +134,7 @@ $ git push --tags
 
 `walle` 支持通过 release note 自动生成修改 changelog 文件。并自动创建 CHANGELOG 文件修改的 Merge Request。
 
-如以下命令，于 `liujie/walle` 仓库，基于 `master` 分支，修改 `CHANGELOG.md` 文件中 `v0.0.1` 版本的变更记录，
-并自动创建修改 `CHANGELOG.md` 文件的 MR。
+如以下命令，于 `liujie/walle` 仓库，基于 `master` 分支，修改 `CHANGELOG.md` 文件中 `v0.0.1` 版本的变更记录， 并自动创建修改 `CHANGELOG.md` 文件的 MR。
 
 ```shell
 $ walle changelog -p liujie/walle --ref master -t v0.0.1 -f CHANGELOG.md
