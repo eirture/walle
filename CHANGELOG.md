@@ -1,7 +1,3 @@
-# v0.1.4 (2020-12-23)
-Other:
-- releasenote: 并发获取 Merge Request ([!29](https://code.bizseer.com/liujie/walle/-/merge_requests/29)) @liujie
-
 # v0.1.3 (2020-12-22)
 _New Features:_
 - releasenote: 支持所有类型的 MR EE-637 ([!23](https://code.bizseer.com/liujie/walle/-/merge_requests/23)) @liujie
