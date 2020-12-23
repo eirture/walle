@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -21,6 +22,7 @@ const (
 	titleOther         = "Other:"
 
 	labelReleaseNoteNone = "release-note-none"
+	defaultWorkerCount   = 4
 )
 
 var (
@@ -157,19 +159,7 @@ func GetReleaseNotesByTag(client gitlab.Client, project, tagName, ref string) (
 		commits = commits[1:]
 	}
 
-	var mrs []*gitlab.MergeRequest
-	for _, commit := range commits {
-		iid := mrNumForCommitFromMessage(commit.Message)
-		if iid == 0 {
-			continue
-		}
-		mr, err := client.GetMergeRequest(project, iid)
-		if err != nil {
-			logrus.Warnf("an error occurred while get merge request %d. %s", iid, err)
-			continue
-		}
-		mrs = append(mrs, mr)
-	}
+	mrs := mrFromCommits(commits, client, project)
 
 	condition := func(mr *gitlab.MergeRequest) bool {
 		// do not have the label `release-note-none`
@@ -177,6 +167,49 @@ func GetReleaseNotesByTag(client gitlab.Client, project, tagName, ref string) (
 		return !exclude
 	}
 	releaseNotes = generateReleaseNotes(mrs, condition)
+	return
+}
+
+func mrFromCommits(commits []*gitlab.Commit, client gitlab.Client, project string) (result []*gitlab.MergeRequest) {
+	var lock sync.Mutex
+	maxWorkerCount := defaultWorkerCount
+	if maxWorkerCount > len(commits) {
+		maxWorkerCount = len(commits)
+	}
+	if maxWorkerCount == 0 {
+		return
+	}
+	c := make(chan int, maxWorkerCount)
+	var wg sync.WaitGroup
+	wg.Add(maxWorkerCount)
+
+	for i := 0; i < maxWorkerCount; i++ {
+		go func() {
+			defer wg.Done()
+			for iid := range c {
+				mr, err := client.GetMergeRequest(project, iid)
+				if err != nil {
+					logrus.Warnf("an error occurred while get merge request %d. %s", iid, err)
+					continue
+				}
+				lock.Lock()
+				result = append(result, mr)
+				lock.Unlock()
+			}
+		}()
+	}
+
+	for _, commit := range commits {
+		iid := mrNumForCommitFromMessage(commit.Message)
+		if iid == 0 {
+			continue
+		}
+		c <- iid
+	}
+
+	close(c)
+	wg.Wait()
+
 	return
 }
 
