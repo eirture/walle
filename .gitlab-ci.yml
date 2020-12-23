@@ -42,8 +42,6 @@ binary:
   stage: pre-release
   variables:
     OSS_ENDPOINT: http://oss-cn-beijing-internal.aliyuncs.com
-    ACCESS_KEY_ID: LTAI4G3kyRTu64JpzH7sHdcq
-    ACCESS_KEY_SECRET: ccWfgItZyebnvvvmQC9ddnqtntDJU4
     RELEASE_PATH: oss://bizseer-public/release/walle
   before_script:
     - ossutil --version
@@ -75,8 +73,6 @@ release_note:
   stage: release
   extends:
     - .only_release
-  variables:
-    WALLE_GITLAB_TOKEN: Xffn3VgaHxyfCy9tcCaV
   before_script:
     - cp bin/walle /usr/local/bin/walle
     - chmod a+x /usr/local/bin/walle
