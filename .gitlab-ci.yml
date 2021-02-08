@@ -9,13 +9,15 @@ include:
   file: templates/.common.gitlab-ci.yml
 
 variables:
-  CLOSE_SONAR_SCAN: 'true'
+  CLOSE_SONAR_SCAN: "true"
 
 lint:
   image: docker.bizseer.com/golangci/golangci-lint:v1.30
   stage: test
   script:
     - golangci-lint run
+  only:
+    - master
 
 .only_release:
   only:
@@ -27,7 +29,7 @@ build:
   image: docker.bizseer.com/library/golang:1.14
   stage: build
   script:
-    - export WALLE_VERSION=${CI_BUILD_TAG:1}
+    - export WALLE_VERSION=${CI_BUILD_REF_NAME:1}
     - echo $WALLE_VERSION
     - make bin/walle
     - ./bin/walle version
@@ -47,7 +49,7 @@ binary:
     - ossutil --version
     - ossutil config -e $OSS_ENDPOINT -i $ACCESS_KEY_ID -k $ACCESS_KEY_SECRET
   script:
-    - export WALLE_VERSION=${CI_BUILD_TAG:1}
+    - export WALLE_VERSION=${CI_BUILD_REF_NAME:1}
     - echo $WALLE_VERSION
     - WALLE_RELEASE_PATH=$RELEASE_PATH/$WALLE_VERSION/walle
     - echo $WALLE_RELEASE_PATH
@@ -58,15 +60,23 @@ binary:
 
 docker_image:
   stage: release
-  extends:
-    - .docker
-    - .only_release
+  image:
+    name: docker.bizseer.com/kaniko-project/executor:v1.3.0-debug
+    entrypoint: [""]
   script:
-    - VERSION=${CI_BUILD_TAG:1}
-    - TAG=docker.bizseer.com/bizseer/walle:$VERSION
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - export VERSION=${CI_BUILD_REF_NAME:1}
+    - TAG=$CI_REGISTRY/bizseer/walle:$VERSION
     - echo $TAG
-    - docker build --build-arg VERSION=$VERSION -t $TAG ./docker
-    - docker push $TAG
+    - |
+      /kaniko/executor \
+        --context $CI_PROJECT_DIR/docker \
+        --dockerfile $CI_PROJECT_DIR/docker/Dockerfile \
+        --destination $TAG \
+        --build-arg VERSION=$VERSION
+  extends:
+    - .only_release
 
 release_note:
   image: alpine:3.12.3
@@ -79,5 +89,5 @@ release_note:
   script:
     - walle version
     - export WALLE_GITLAB_HOST=$CI_SERVER_URL
-    - walle release -p $CI_PROJECT_PATH --ref $CI_COMMIT_SHA -t $CI_BUILD_TAG
-    - walle changelog -p $CI_PROJECT_PATH --ref $CI_COMMIT_SHA -t $CI_BUILD_TAG --assignee $GITLAB_USER_ID
+    - walle release -p $CI_PROJECT_PATH --ref $CI_COMMIT_SHA -t $CI_BUILD_REF_NAME
+    - walle changelog -p $CI_PROJECT_PATH --ref $CI_COMMIT_SHA -t $CI_BUILD_REF_NAME --assignee $GITLAB_USER_ID
